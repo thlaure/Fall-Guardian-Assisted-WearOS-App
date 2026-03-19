@@ -10,7 +10,8 @@ import kotlin.math.sqrt
  *   Phase 2 (Impact):    ||accel|| > impactThresholdG
  *   Phase 3 (Tilt):      angle from upright > tiltThresholdDeg (via gravity vector)
  *
- * Trigger: (Phase1 AND Phase2) OR (Phase2 AND Phase3)
+ * Trigger: Phase1 qualified (latched) AND Phase2 active
+ * Free-fall is a required precondition; tilt is tracked for future use.
  *
  * No immobility requirement — fires immediately after the last qualifying phase.
  */
@@ -23,6 +24,9 @@ class FallAlgorithm(
     // State
     private var freeFallStartMs: Long = 0L
     private var freeFallActive = false
+    // Latches true once free-fall qualifies; cleared only by reset().
+    // This preserves the qualification across the impact sample that clears freeFallActive.
+    private var freeFallQualifiedLatch = false
     private var impactDetected = false
     private var impactTimeMs: Long = 0L
 
@@ -34,6 +38,7 @@ class FallAlgorithm(
     fun reset() {
         freeFallActive = false
         freeFallStartMs = 0L
+        freeFallQualifiedLatch = false
         impactDetected = false
         impactTimeMs = 0L
         gravity.fill(0f)
@@ -63,6 +68,7 @@ class FallAlgorithm(
             freeFallActive = false
         }
         val freeFallQualified = freeFallActive && (nowMs - freeFallStartMs >= freeFallMinMs)
+        if (freeFallQualified) freeFallQualifiedLatch = true
 
         // --- Phase 2: Impact detection ---
         if (normG > impactThresholdG) {
@@ -72,12 +78,11 @@ class FallAlgorithm(
         // Impact window: keep it alive for 2 seconds after detection
         val impactActive = impactDetected && (nowMs - impactTimeMs < 2000L)
 
-        // --- Phase 3: Tilt detection ---
+        // --- Phase 3: Tilt detection (tracked; requires free-fall latch to trigger) ---
         val tiltDeg = tiltAngleDeg()
-        val tiltActive = tiltDeg > tiltThresholdDeg
 
-        // --- Trigger rule ---
-        val fallDetected = (freeFallQualified && impactActive) || (impactActive && tiltActive)
+        // --- Trigger rule: free-fall must have been qualified (latch) AND impact is active ---
+        val fallDetected = freeFallQualifiedLatch && impactActive
 
         return fallDetected
     }

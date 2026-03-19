@@ -15,6 +15,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
@@ -88,17 +89,18 @@ class FallDetectionService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type != Sensor.TYPE_ACCELEROMETER) return
 
-        val now = System.currentTimeMillis()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val nowWall = System.currentTimeMillis()
         val ax = event.values[0]
         val ay = event.values[1]
         val az = event.values[2]
 
-        val detected = algorithm.processSample(ax, ay, az, now)
+        val detected = algorithm.processSample(ax, ay, az, nowElapsed)
 
-        if (detected && (now - lastFallMs > cooldownMs)) {
-            lastFallMs = now
+        if (detected && (nowElapsed - lastFallMs > cooldownMs)) {
+            lastFallMs = nowElapsed
             algorithm.reset()
-            WearDataSender.sendFallEvent(applicationContext, now)
+            WearDataSender.sendFallEvent(applicationContext, nowWall)
         }
     }
 
