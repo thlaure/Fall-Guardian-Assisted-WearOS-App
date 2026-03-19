@@ -1,4 +1,4 @@
-package com.fallguardian.wear
+package com.fallguardian
 
 import android.app.Notification
 import android.app.NotificationChannel

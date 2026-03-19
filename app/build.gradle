@@ -1,14 +1,15 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 android {
-    namespace 'com.fallguardian.wear'
+    namespace 'com.fallguardian'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.fallguardian.wear"
+        applicationId "com.fallguardian"
         minSdk 28  // Wear OS 2.0+
         targetSdk 34
         versionCode 1
@@ -24,11 +25,9 @@ android {
 
     buildFeatures {
         compose true
+        buildConfig true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.3'
-    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
