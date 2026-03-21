@@ -20,6 +20,8 @@ object WearDataSender {
         private set
     var remainingSeconds by mutableStateOf(30)
         private set
+    var permissionDenied by mutableStateOf(false)
+        internal set
 
     private val handler = Handler(Looper.getMainLooper())
     private val tickRunnable = object : Runnable {

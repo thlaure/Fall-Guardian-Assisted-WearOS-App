@@ -79,6 +79,7 @@ class FallDetectionService : Service(), SensorEventListener {
     private fun registerSensors() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS)
                 != PackageManager.PERMISSION_GRANTED) {
+            WearDataSender.permissionDenied = true
             stopSelf()
             return
         }

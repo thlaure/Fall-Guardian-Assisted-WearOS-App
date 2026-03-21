@@ -1,12 +1,17 @@
 package com.fallguardian
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -31,13 +36,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.wear.compose.material.*
 
 class MainActivity : ComponentActivity() {
 
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            WearDataSender.permissionDenied = false
+            startForegroundService(Intent(this, FallDetectionService::class.java))
+        } else {
+            WearDataSender.permissionDenied = true
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startForegroundService(Intent(this, FallDetectionService::class.java))
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS)
+                == PackageManager.PERMISSION_GRANTED) {
+            startForegroundService(Intent(this, FallDetectionService::class.java))
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.BODY_SENSORS)
+        }
         setContent { WearApp() }
     }
 }
@@ -46,11 +68,46 @@ class MainActivity : ComponentActivity() {
 fun WearApp() {
     val context = LocalContext.current
     val alertActive = WearDataSender.alertActive
+    val permissionDenied = WearDataSender.permissionDenied
     MaterialTheme {
-        if (alertActive) {
-            AlertScreen(context)
-        } else {
-            IdleScreen(context)
+        when {
+            permissionDenied -> PermissionDeniedScreen(context)
+            alertActive -> AlertScreen(context)
+            else -> IdleScreen(context)
+        }
+    }
+}
+
+@Composable
+private fun PermissionDeniedScreen(context: Context) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1A1A2E)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Sensor access\nrequired",
+                color = Color.White,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Chip(
+                onClick = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                },
+                label = { Text("Open Settings", fontSize = 11.sp) },
+                colors = ChipDefaults.chipColors(backgroundColor = Color(0xFF23254A))
+            )
         }
     }
 }
