@@ -13,9 +13,15 @@ import org.json.JSONObject
 class PhoneMessageListenerService : WearableListenerService() {
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path != "/thresholds") return
+        when (messageEvent.path) {
+            "/thresholds" -> handleThresholds(messageEvent.data)
+            "/cancel_alert" -> WearDataSender.cancelAlertFromPhone()
+        }
+    }
+
+    private fun handleThresholds(data: ByteArray) {
         try {
-            val json = JSONObject(String(messageEvent.data, Charsets.UTF_8))
+            val json = JSONObject(String(data, Charsets.UTF_8))
             val prefs = getSharedPreferences("fall_guardian", Context.MODE_PRIVATE)
             prefs.edit().apply {
                 if (json.has("thresh_freefall"))

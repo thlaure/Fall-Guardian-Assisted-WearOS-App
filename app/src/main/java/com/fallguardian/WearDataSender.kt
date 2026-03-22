@@ -53,6 +53,13 @@ object WearDataSender {
         sendToPhone(context, "/cancel_alert", ByteArray(0), "cancel alert")
     }
 
+    /** Called by PhoneMessageListenerService when the phone user cancels the alert. */
+    fun cancelAlertFromPhone() {
+        handler.removeCallbacks(tickRunnable)
+        alertActive = false
+        remainingSeconds = 30
+    }
+
     private fun sendToPhone(context: Context, path: String, payload: ByteArray, label: String) {
         Wearable.getNodeClient(context).connectedNodes
             .addOnSuccessListener { nodes ->
