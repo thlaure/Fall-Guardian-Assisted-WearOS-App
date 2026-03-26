@@ -9,9 +9,12 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.Wearable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -41,6 +44,16 @@ import androidx.wear.compose.material.*
 
 class MainActivity : ComponentActivity() {
 
+    // Receives /cancel_alert messages while the Activity is in the foreground.
+    // WearableListenerService is unreliable in the emulator for phone→watch direction;
+    // MessageClient.addListener works as long as the Activity is alive.
+    private val cancelAlertListener = MessageClient.OnMessageReceivedListener { messageEvent ->
+        if (messageEvent.path == "/cancel_alert") {
+            Log.d("MainActivity", "cancelAlertListener: received /cancel_alert")
+            WearDataSender.cancelAlertFromPhone()
+        }
+    }
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -54,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Wearable.getMessageClient(this).addListener(cancelAlertListener)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS)
                 == PackageManager.PERMISSION_GRANTED) {
             startForegroundService(Intent(this, FallDetectionService::class.java))
@@ -61,6 +75,11 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.BODY_SENSORS)
         }
         setContent { WearApp() }
+    }
+
+    override fun onDestroy() {
+        Wearable.getMessageClient(this).removeListener(cancelAlertListener)
+        super.onDestroy()
     }
 }
 

@@ -1,6 +1,7 @@
 package com.fallguardian
 
 import android.content.Context
+import android.util.Log
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import org.json.JSONObject
@@ -13,6 +14,7 @@ import org.json.JSONObject
 class PhoneMessageListenerService : WearableListenerService() {
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
+        Log.d("PhoneMessageListener", "onMessageReceived: path=${messageEvent.path}")
         when (messageEvent.path) {
             "/thresholds" -> handleThresholds(messageEvent.data)
             "/cancel_alert" -> WearDataSender.cancelAlertFromPhone()
