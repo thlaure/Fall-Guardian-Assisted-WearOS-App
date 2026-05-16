@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import java.nio.ByteBuffer
 
@@ -108,6 +109,7 @@ object WearDataSender {
         // Encode the 8-byte Long timestamp into a raw byte array for the message payload.
         val payload = ByteBuffer.allocate(8).putLong(timestamp).array()
         sendToPhone(context, "/fall_event", payload, "fall event")
+        queueForPhone(context, "/fall_event", timestamp, "fall event")
 
         // Reset any previous countdown before starting a new one.
         handler.removeCallbacks(tickRunnable)
@@ -134,6 +136,7 @@ object WearDataSender {
         remainingSeconds = 30                  // Reset for the next alert.
         // Empty payload — the phone only needs to know that cancel happened, not any data.
         sendToPhone(context, "/cancel_alert", ByteArray(0), "cancel alert")
+        queueForPhone(context, "/cancel_alert", System.currentTimeMillis(), "cancel alert")
     }
 
     /**
@@ -202,5 +205,19 @@ object WearDataSender {
                 }
             }
             .addOnFailureListener { e -> Log.e("WearDataSender", "Failed to get connected nodes", e) }
+    }
+
+    private fun queueForPhone(context: Context, path: String, timestamp: Long, label: String) {
+        val request = PutDataMapRequest.create(path).apply {
+            dataMap.putLong("timestamp", timestamp)
+            // DataClient coalesces items by path; this marker makes every alert
+            // and cancel a distinct update even when the path is unchanged.
+            dataMap.putLong("updatedAt", System.currentTimeMillis())
+        }.asPutDataRequest().setUrgent()
+
+        Wearable.getDataClient(context)
+            .putDataItem(request)
+            .addOnSuccessListener { Log.d("WearDataSender", "Queued $label for phone") }
+            .addOnFailureListener { e -> Log.e("WearDataSender", "Failed to queue $label", e) }
     }
 }

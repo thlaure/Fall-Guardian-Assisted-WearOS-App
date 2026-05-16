@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      android-gradle-toolchain:
+        patterns:
+          - com.android.application
+          - gradle-wrapper
 
   - package-ecosystem: github-actions
     directory: /
