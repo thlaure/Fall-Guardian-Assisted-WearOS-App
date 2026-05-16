@@ -18,6 +18,9 @@ Always:
 
 - keep watch-to-phone and watch-to-backend contracts aligned with the assisted app and backend
 - keep Gradle, Android Studio, and local SDK generated files out of Git
+- prefer readable, explicit code over clever Android/Wear OS platform tricks
+- add concise comments for Wear OS concepts, sensors, foreground services, wake locks, permissions, background message delivery, and safety-critical alert behavior when they are not obvious to a non-mobile developer
+- keep automated line coverage at or above 90%; coverage must come from useful behavior, contract, edge-case, and regression tests, not shallow line execution
 - run relevant Gradle checks after Kotlin/Java or Android configuration changes when feasible
 
 Ask first:
@@ -36,6 +39,5 @@ Never:
 Common commands:
 
 ```sh
-./gradlew test
-./gradlew build
+make check
 ```

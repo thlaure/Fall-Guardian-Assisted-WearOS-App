@@ -104,18 +104,34 @@ class PhoneMessageListenerService : WearableListenerService() {
             // the lambda on the editor object and returns the editor, enabling chaining.
             prefs.edit().apply {
                 // Each threshold is optional in the payload — only write it if present.
-                if (json.has("thresh_freefall"))
-                    putFloat("thresh_freefall", json.getDouble("thresh_freefall").toFloat())
-                if (json.has("thresh_impact"))
-                    putFloat("thresh_impact", json.getDouble("thresh_impact").toFloat())
-                if (json.has("thresh_tilt"))
-                    putFloat("thresh_tilt", json.getDouble("thresh_tilt").toFloat())
-                if (json.has("thresh_freefall_ms"))
-                    putInt("thresh_freefall_ms", json.getInt("thresh_freefall_ms"))
+                json.validDouble("thresh_freefall", 0.1, 1.0)?.let {
+                    putFloat("thresh_freefall", it.toFloat())
+                }
+                json.validDouble("thresh_impact", 1.5, 5.0)?.let {
+                    putFloat("thresh_impact", it.toFloat())
+                }
+                json.validDouble("thresh_tilt", 20.0, 90.0)?.let {
+                    putFloat("thresh_tilt", it.toFloat())
+                }
+                json.validInt("thresh_freefall_ms", 40, 200)?.let {
+                    putInt("thresh_freefall_ms", it)
+                }
             }.apply() // Commit the batch to disk asynchronously.
         } catch (_: Exception) {
             // Malformed payload — ignore silently. A bad threshold message should
             // not crash the app; the old values remain in effect.
         }
+    }
+
+    private fun JSONObject.validDouble(key: String, min: Double, max: Double): Double? {
+        if (!has(key)) return null
+        val value = getDouble(key)
+        return value.takeIf { it.isFinite() && it in min..max }
+    }
+
+    private fun JSONObject.validInt(key: String, min: Int, max: Int): Int? {
+        if (!has(key)) return null
+        val value = getInt(key)
+        return value.takeIf { it in min..max }
     }
 }

@@ -1,4 +1,4 @@
-.PHONY: help test build assemble-debug install-debug clean
+.PHONY: help test lint build check assemble-debug install-debug clean
 
 .DEFAULT_GOAL := help
 
@@ -13,8 +13,13 @@ help: ## Show available commands
 test: ## Run JVM tests
 	./gradlew test
 
+lint: ## Run Android lint
+	./gradlew lint
+
 build: ## Build the Wear OS app
 	./gradlew build
+
+check: test lint build ## Run deterministic quality checks
 
 assemble-debug: ## Build the debug APK
 	./gradlew assembleDebug
