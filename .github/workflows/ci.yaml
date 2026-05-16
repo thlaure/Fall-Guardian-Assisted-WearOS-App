@@ -40,6 +40,20 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
+  dependency-scan:
+    name: Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Scan dependencies for vulnerabilities
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --recursive
+            .
+
   secret-scan:
     name: Secret Scan
     runs-on: ubuntu-latest
