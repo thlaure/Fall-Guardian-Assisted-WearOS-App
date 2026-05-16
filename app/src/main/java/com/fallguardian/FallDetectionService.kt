@@ -161,10 +161,10 @@ class FallDetectionService : Service(), SensorEventListener {
      *   - 80 ms freefall window     (minimum duration of weightlessness)
      */
     private fun loadAlgorithmFromPrefs() = FallAlgorithm(
-        freeFallThresholdG = prefs.getFloat("thresh_freefall", 0.5f),
-        impactThresholdG = prefs.getFloat("thresh_impact", 2.5f),
-        tiltThresholdDeg = prefs.getFloat("thresh_tilt", 45f),
-        freeFallMinMs = prefs.getInt("thresh_freefall_ms", 80).toLong()
+        freeFallThresholdG = prefs.getFloat("thresh_freefall", 0.5f).coerceIn(0.1f, 1.0f),
+        impactThresholdG = prefs.getFloat("thresh_impact", 2.5f).coerceIn(1.5f, 5.0f),
+        tiltThresholdDeg = prefs.getFloat("thresh_tilt", 45f).coerceIn(20f, 90f),
+        freeFallMinMs = prefs.getInt("thresh_freefall_ms", 80).coerceIn(40, 200).toLong()
     )
 
     /**
